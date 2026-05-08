@@ -1,246 +1,114 @@
-# AI SaaS ChatBot - Production-Ready MERN + AI Project
+# NexusAI: Advanced Business Data Intelligence Platform 🚀
 
-A full-stack AI-powered chatbot application that combines document management with intelligent Q&A capabilities powered by LLMs.
+NexusAI is a premium, full-stack AI-powered platform designed to transform raw business data into actionable strategic insights. By combining **Retrieval-Augmented Generation (RAG)** with sophisticated data profiling and dynamic visualizations, NexusAI allows users to "talk" to their spreadsheets and instantly generate executive-grade reports.
 
-## 🚀 Features
-
-### Core Features
-- **User Authentication**: Secure JWT-based authentication
-- **Document Management**: Upload and process PDFs, TXT files
-- **AI Chat Interface**: Real-time chat with context-aware responses
-- **Vector Embeddings**: Semantic search using Pinecone
-- **LLM Integration**: GPT-3.5/GPT-4 powered responses
-- **Response Ratings**: Users can rate AI responses
-
-### Tech Stack
-- **Frontend**: React 18, TypeScript, TailwindCSS
-- **Backend**: Node.js, Express, TypeScript
-- **Database**: MongoDB (chat history, documents)
-- **Vector DB**: Pinecone (semantic search)
-- **LLM**: OpenAI GPT models
-- **Embeddings**: OpenAI Embeddings API
-- **ORM**: Mongoose
-
-## 📋 Prerequisites
-
-- Node.js 18+
-- MongoDB (local or Atlas)
-- OpenAI API key
-- Pinecone API key
-- Docker (optional)
-
-## 🔧 Setup Instructions
-
-### Backend Setup
-
-```bash
-cd backend
-npm install
-
-# Create .env file in root directory
-cp ../.env.example .env
-
-# Fill in your credentials
-# - MONGODB_URI
-# - OPENAI_API_KEY
-# - PINECONE_API_KEY
-# - JWT_SECRET
-
-npm run dev
-```
-
-### Frontend Setup
-
-```bash
-cd frontend
-npm install
-
-npm start
-```
-
-The frontend will run on `http://localhost:3000`
-The backend will run on `http://localhost:5000`
-
-## 🐳 Docker Setup
-
-```bash
-docker-compose up -d
-```
-
-All services will start:
-- Frontend: http://localhost:3000
-- Backend: http://localhost:5000
-- MongoDB: localhost:27017
-
-## 📚 Project Structure
-
-```
-ai-saas-chatbot/
-├── backend/
-│   ├── src/
-│   │   ├── routes/          # API endpoints
-│   │   ├── services/        # Business logic (LLM, embeddings, vector DB)
-│   │   ├── models/          # MongoDB schemas
-│   │   ├── middleware/      # Auth, error handling
-│   │   ├── utils/           # Utilities (JWT, text processing)
-│   │   └── index.ts         # Express server
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── components/      # React components
-│   │   ├── pages/           # Page components
-│   │   ├── services/        # API client
-│   │   ├── hooks/           # Custom React hooks
-│   │   ├── types/           # TypeScript types
-│   │   ├── App.tsx
-│   │   └── index.tsx
-│   ├── public/
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── tailwind.config.js
-│   └── Dockerfile
-├── docker-compose.yml
-└── .env.example
-```
-
-## 🔌 API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-
-### Documents
-- `POST /api/documents/upload` - Upload document
-- `GET /api/documents` - Get user's documents
-- `DELETE /api/documents/:id` - Delete document
-
-### Chat
-- `POST /api/chat` - Create new chat
-- `GET /api/chat` - Get all chats
-- `GET /api/chat/:id` - Get specific chat
-- `POST /api/chat/:id/message` - Send message
-- `POST /api/chat/:id/rate` - Rate message
-- `DELETE /api/chat/:id` - Delete chat
-
-## 🤖 How It Works
-
-1. **Document Upload**: User uploads a PDF or text file
-2. **Text Processing**: Backend extracts and chunks the text
-3. **Embeddings**: Text chunks are converted to embeddings using OpenAI
-4. **Vector Storage**: Embeddings stored in Pinecone for semantic search
-5. **Query Processing**: User question converted to embedding
-6. **Semantic Search**: Similar chunks retrieved from Pinecone
-7. **LLM Response**: Retrieved context + question sent to GPT-3.5/4
-8. **Response Display**: Answer shown with source citations
-
-## 📊 Database Schema
-
-### User
-```typescript
-{
-  username: string (unique)
-  email: string (unique)
-  password: string (hashed)
-  role: 'user' | 'admin'
-  createdAt: Date
-  updatedAt: Date
-}
-```
-
-### Document
-```typescript
-{
-  userId: ObjectId
-  title: string
-  filename: string
-  fileSize: number
-  content: string
-  chunksCount: number
-  vectorsCount: number
-  status: 'processing' | 'completed' | 'failed'
-  uploadedAt: Date
-}
-```
-
-### Chat
-```typescript
-{
-  userId: ObjectId
-  title: string
-  messages: Message[]
-  documentIds: ObjectId[]
-  isActive: boolean
-  createdAt: Date
-  updatedAt: Date
-}
-```
-
-## 🚀 Deployment
-
-### Vercel (Frontend)
-```bash
-npm run build
-vercel deploy
-```
-
-### Railway/Render (Backend)
-1. Connect GitHub repo
-2. Set environment variables
-3. Deploy automatically
-
-### MongoDB Atlas
-- Create free tier cluster
-- Use connection string in MONGODB_URI
-
-### Pinecone
-- Create free tier index
-- Use API key and environment
-
-## 🔐 Security Features
-
-- JWT authentication
-- Password hashing with bcrypt
-- CORS enabled
-- Input validation
-- Authorization checks
-- Rate limiting ready
-
-## 📈 Performance Optimizations
-
-- Vector caching
-- Document chunking with overlap
-- Batch API requests
-- Connection pooling
-- Index optimization
-
-## 🎯 Internship Interview Talking Points
-
-1. **Full-Stack Development**: React, Node.js, MongoDB, TypeScript
-2. **AI/ML Integration**: Vector embeddings, semantic search, LLM chains
-3. **Scalability**: Batch processing, indexing, caching strategies
-4. **Database Design**: Schema normalization, indexing
-5. **API Design**: RESTful architecture, error handling
-6. **Authentication**: JWT implementation, password hashing
-7. **DevOps**: Docker, docker-compose, deployment strategies
-8. **Best Practices**: Code organization, error handling, logging
-
-## 🤝 Contributing
-
-1. Create feature branch
-2. Commit changes
-3. Push to branch
-4. Open pull request
-
-## 📝 License
-
-MIT
-
-## 🙋 Support
-
-For issues and questions, check the GitHub issues or contact the maintainer.
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![React](https://img.shields.io/badge/Frontend-React.js-61DAFB?logo=react)
+![Node](https://img.shields.io/badge/Backend-Node.js-339933?logo=node.js)
+![AI](https://img.shields.io/badge/AI-Llama%203%20(Groq)-orange?logo=meta)
+![Database](https://img.shields.io/badge/Database-MongoDB-47A248?logo=mongodb)
 
 ---
 
-**Built for internship success!** 🎓
+## ✨ Key Features
+
+### 🧠 Intelligent AI Chat (RAG)
+*   **Context-Aware Analysis**: Chat with your PDFs, CSVs, and XLSX files using Llama 3.1 via Groq for ultra-fast processing.
+*   **Hybrid RAG System**: Uses vector embeddings for text documents and statistical injection for structured datasets.
+*   **Dynamic Charting**: Ask the AI to "visualize sales by region," and it will render a live chart directly in the chat bubble.
+
+### 📊 Automated Data Profiling
+*   **Instant Stats**: Automatic calculation of Median, Standard Deviation, Null Counts, and Unique Values upon upload.
+*   **Type Sniffing**: Automatically detects Dates, Categories, and Numeric fields to ensure accurate visualization.
+*   **Executive Summaries**: AI-generated Key Insights, Trends, Strategic Recommendations, and Risk Anomalies.
+
+### 🎨 Premium Dashboard Experience
+*   **Rich Aesthetics**: Modern dark-mode interface with Glassmorphism, smooth animations, and responsive design.
+*   **Interactive Data Explorer**: Search, filter, and paginate through your raw data with a high-performance table view.
+*   **Visual Intelligence Tab**: A dedicated suite of Bar, Line, and Doughnut charts that auto-adjust based on your dataset.
+
+### 🛠️ Professional Tooling
+*   **PDF Export**: Download your AI-generated insights and charts as a professionally formatted PDF report.
+*   **Voice Integration**: Use speech-to-text to ask questions and hear the AI read its findings aloud.
+*   **Secure Auth**: Full authentication system with JWT and Google OAuth integration.
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework**: React.js 18 (TypeScript)
+- **Styling**: Tailwind CSS + Custom CSS Variables (Glassmorphism)
+- **Charts**: Chart.js + React-Chartjs-2
+- **Icons**: React Icons (Lucide/Material)
+- **PDF Generation**: jsPDF
+
+### Backend
+- **Runtime**: Node.js + Express (TypeScript)
+- **Database**: MongoDB (Mongoose)
+- **AI/LLM**: Groq (Llama 3.1 8B/70B)
+- **Embeddings**: LangChain + VectorDB logic
+- **File Parsing**: SheetJS (XLSX) & PapaParse (CSV)
+- **Storage**: Cloudinary (for report file persistence)
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v18+)
+- MongoDB (Local or Atlas)
+- Groq API Key
+- Cloudinary Credentials (Optional for local testing)
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/nexus-ai.git
+   cd nexus-ai
+   ```
+
+2. **Backend Setup**
+   ```bash
+   cd backend
+   npm install
+   # Create .env file and add your keys (GROQ_API_KEY, MONGO_URI, JWT_SECRET)
+   npm run dev
+   ```
+
+3. **Frontend Setup**
+   ```bash
+   cd ../frontend
+   npm install
+   # Create .env file and add REACT_APP_API_URL
+   npm start
+   ```
+
+---
+
+## 📂 Project Structure
+
+```text
+├── backend/
+│   ├── src/
+│   │   ├── models/        # Mongoose Schemas (User, Report, Chat)
+│   │   ├── routes/        # API Endpoints (Auth, Reports, Chat)
+│   │   ├── services/      # AI, Embeddings, VectorDB Logic
+│   │   └── utils/         # Data Parsers & Statistical Engine
+├── frontend/
+│   ├── src/
+│   │   ├── components/    # Reusable UI (Charts, ChatWindow, etc.)
+│   │   ├── pages/         # Dashboard, Login, Register
+│   │   ├── services/      # Axios API Client
+│   │   └── utils/         # Chart Helpers & Formatting
+```
+
+---
+
+## 📝 License
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+**Built with ❤️ by [Your Name]**

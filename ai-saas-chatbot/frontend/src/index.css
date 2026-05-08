@@ -132,8 +132,14 @@ body {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(108, 92, 231, 0.1); }
-  50% { box-shadow: 0 0 40px rgba(108, 92, 231, 0.25); }
+  0%, 100% { box-shadow: 0 0 15px rgba(0, 206, 201, 0.1); }
+  50% { box-shadow: 0 0 30px rgba(0, 206, 201, 0.25); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 @keyframes shimmer {
@@ -196,6 +202,14 @@ body {
   animation: float 3s ease-in-out infinite;
 }
 
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
 .glass {
   background: var(--bg-glass);
   backdrop-filter: blur(20px);
@@ -219,33 +233,29 @@ body {
   background-clip: text;
 }
 
-.gradient-border {
-  position: relative;
-  border: none;
+/* Custom Scrollbar for inner containers */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
 }
 
-.gradient-border::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: var(--accent-gradient);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: xor;
-  -webkit-mask-composite: xor;
-  pointer-events: none;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-/* Shimmer loading effect */
-.shimmer {
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
 }
 
-/* ===== Toast overrides ===== */
-.react-hot-toast {
-  font-family: 'Inter', sans-serif !important;
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Responsive Hide */
+@media (max-width: 1024px) {
+  .lg-hide { display: none !important; }
+}
+
+@media (max-width: 768px) {
+  .md-hide { display: none !important; }
 }

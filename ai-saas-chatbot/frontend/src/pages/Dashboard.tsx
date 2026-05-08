@@ -496,6 +496,7 @@ export default function Dashboard({ view = 'dashboard' }: DashboardProps) {
         {activeChat ? (
           <ChatWindow
             chat={activeChat}
+            report={activeReport}
             onChatUpdate={(updatedChat) => {
               setActiveChat(updatedChat);
               setChats(prev => prev.map(c => c._id === updatedChat._id

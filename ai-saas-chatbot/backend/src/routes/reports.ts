@@ -31,20 +31,24 @@ const upload = multer({
 const buildInsightsPayload = (report: {
   title: string;
   columns: string[];
+  columnTypes: Record<string, string>;
   rowCount: number;
   columnCount: number;
   numericStats: any[];
   categoricalStats: any[];
   previewRows: Record<string, string | number | null>[];
+  industry?: string;
 }) => {
   return {
     title: report.title,
     rowCount: report.rowCount,
     columnCount: report.columnCount,
     columns: report.columns,
+    columnTypes: report.columnTypes,
     numericStats: report.numericStats,
     categoricalStats: report.categoricalStats,
-    previewRows: report.previewRows.slice(0, 10)
+    previewRows: report.previewRows.slice(0, 10),
+    industry: report.industry
   };
 };
 
@@ -122,6 +126,7 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
       fileUrl,
       filePublicId,
       columns: parsed.columns,
+      columnTypes: profile.columnTypes,
       rowCount: profile.rowCount,
       columnCount: profile.columnCount,
       previewRows: profile.previewRows,
@@ -136,14 +141,17 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
     user.currentDocumentCount += 1;
     await user.save();
 
+
     const payload = buildInsightsPayload({
       title: report.title,
       columns: report.columns,
+      columnTypes: (report.columnTypes as Record<string, string>) || {},
       rowCount: report.rowCount,
       columnCount: report.columnCount,
       numericStats: report.numericStats,
       categoricalStats: report.categoricalStats,
-      previewRows: report.previewRows
+      previewRows: report.previewRows,
+      industry: user?.industry
     });
 
     LLMService.generateReportInsights(payload)
@@ -169,7 +177,9 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
         rowCount: report.rowCount,
         columnCount: report.columnCount,
         columns: report.columns,
+        columnTypes: report.columnTypes,
         previewRows: report.previewRows,
+        dataSample: report.dataSample,
         numericStats: report.numericStats,
         categoricalStats: report.categoricalStats,
         insights: report.insights,

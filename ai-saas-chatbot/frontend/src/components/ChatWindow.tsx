@@ -1,15 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
-import { Chat } from '../types';
+import { Chat, Report } from '../types';
 import MessageBubble from './MessageBubble';
 
 interface ChatWindowProps {
   chat: Chat;
+  report: Report | null;
   onChatUpdate: (chat: Chat) => void;
 }
 
-export default function ChatWindow({ chat, onChatUpdate }: ChatWindowProps) {
+export default function ChatWindow({ chat, report, onChatUpdate }: ChatWindowProps) {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -182,6 +183,7 @@ export default function ChatWindow({ chat, onChatUpdate }: ChatWindowProps) {
               <MessageBubble
                 key={msg._id || idx}
                 message={msg}
+                report={report}
                 index={idx}
                 onRate={(rating) => handleRateMessage(idx, rating)}
               />

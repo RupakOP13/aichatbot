@@ -34,12 +34,24 @@ export interface Chat {
   updatedAt: string;
 }
 
+export interface ChartRecommendation {
+  type: 'bar' | 'line' | 'pie' | 'area' | 'scatter';
+  title: string;
+  xColumn?: string;
+  yColumn?: string;
+  column?: string;
+  description?: string;
+}
+
 export interface ReportInsight {
   summary?: string;
   keyInsights: string[];
   trends: string[];
   recommendations: string[];
   risks: string[];
+  chartConfig?: {
+    recommendedCharts: ChartRecommendation[];
+  };
 }
 
 export interface NumericStat {
@@ -49,11 +61,17 @@ export interface NumericStat {
   avg: number;
   sum: number;
   count: number;
+  median?: number;
+  stdDev?: number;
+  nullCount?: number;
+  uniqueCount?: number;
 }
 
 export interface CategoricalStat {
   column: string;
   topValues: { value: string; count: number }[];
+  uniqueCount?: number;
+  nullCount?: number;
 }
 
 export interface Report {
@@ -68,6 +86,7 @@ export interface Report {
   rowCount: number;
   columnCount: number;
   columns: string[];
+  columnTypes?: Record<string, 'number' | 'date' | 'string'>;
   previewRows: Record<string, string | number | null>[];
   dataSample?: Record<string, string | number | null>[];
   numericStats: NumericStat[];

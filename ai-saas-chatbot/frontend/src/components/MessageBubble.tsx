@@ -1,17 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Message } from '../types';
+import { Message, Report } from '../types';
+import DynamicChatChart from './DynamicChatChart';
 
 interface MessageBubbleProps {
   message: Message;
+  report: Report | null;
   index: number;
   onRate: (rating: 'like' | 'dislike') => void;
 }
 
-export default function MessageBubble({ message, index, onRate }: MessageBubbleProps) {
+export default function MessageBubble({ message, report, index, onRate }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const [isHovered, setIsHovered] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Detect embedded chart config: [CHART_CONFIG: {...}]
+  const chartConfig = useMemo(() => {
+    if (isUser) return null;
+    const match = message.content.match(/\[CHART_CONFIG:\s*(\{.*?\})\]/);
+    if (match) {
+      try {
+        return JSON.parse(match[1]);
+      } catch (e) {
+        console.error('Failed to parse chat chart config', e);
+        return null;
+      }
+    }
+    return null;
+  }, [message.content, isUser]);
+
+  // Clean content of the chart tag for display
+  const displayContent = useMemo(() => {
+    return message.content.replace(/\[CHART_CONFIG:\s*\{.*?\}\]/, '').trim();
+  }, [message.content]);
 
   const handleSpeak = () => {
     if ('speechSynthesis' in window) {
@@ -19,17 +41,12 @@ export default function MessageBubble({ message, index, onRate }: MessageBubbleP
         window.speechSynthesis.cancel();
         setIsSpeaking(false);
       } else {
-        // Cancel any ongoing speech first
         window.speechSynthesis.cancel();
-        
-        // Strip markdown before speaking
-        const cleanText = message.content.replace(/[#_*`\[\]]/g, '');
+        const cleanText = displayContent.replace(/[#_*`\[\]]/g, '');
         const utterance = new SpeechSynthesisUtterance(cleanText);
-        
         utterance.onstart = () => setIsSpeaking(true);
         utterance.onend = () => setIsSpeaking(false);
         utterance.onerror = () => setIsSpeaking(false);
-        
         window.speechSynthesis.speak(utterance);
       }
     }
@@ -48,7 +65,6 @@ export default function MessageBubble({ message, index, onRate }: MessageBubbleP
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Avatar */}
       <div style={{
         width: 32, height: 32, borderRadius: 'var(--radius-full)',
         background: isUser ? 'var(--accent-gradient)' : 'var(--bg-tertiary)',
@@ -59,15 +75,13 @@ export default function MessageBubble({ message, index, onRate }: MessageBubbleP
         {isUser ? '👤' : '🤖'}
       </div>
 
-      {/* Bubble */}
-      <div style={{ maxWidth: '75%', minWidth: 0 }}>
-        {/* Role label */}
+      <div style={{ maxWidth: '85%', minWidth: 0 }}>
         <div style={{
           fontSize: 11, fontWeight: 600, marginBottom: 4,
           color: isUser ? 'var(--accent-secondary)' : 'var(--text-muted)',
           textAlign: isUser ? 'right' : 'left',
         }}>
-          {isUser ? 'You' : 'NexusAI'}
+          {isUser ? 'You' : 'NexusAI Analyst'}
         </div>
 
         <div style={{
@@ -76,24 +90,22 @@ export default function MessageBubble({ message, index, onRate }: MessageBubbleP
             : 'var(--bg-glass)',
           border: `1px solid ${isUser ? 'rgba(0,206,201,0.2)' : 'var(--border-subtle)'}`,
           borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-          padding: '12px 16px',
+          padding: '14px 18px',
           transition: 'var(--transition-fast)',
+          boxShadow: isUser ? 'none' : 'var(--shadow-sm)',
         }}>
-          {/* Message content */}
           <div style={{
-            fontSize: 14, lineHeight: 1.65, color: 'var(--text-primary)',
+            fontSize: 14, lineHeight: 1.7, color: 'var(--text-primary)',
             wordBreak: 'break-word',
           }}>
             {isUser ? (
-              <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{message.content}</p>
+              <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{displayContent}</p>
             ) : (
-              <div className="prose-dark" style={{
-                // Style markdown output
-              }}>
+              <div className="prose-dark">
                 <ReactMarkdown
                   components={{
-                    p: ({ children }) => <p style={{ margin: '0 0 8px 0' }}>{children}</p>,
-                    strong: ({ children }) => <strong style={{ color: 'var(--accent-secondary)', fontWeight: 600 }}>{children}</strong>,
+                    p: ({ children }) => <p style={{ margin: '0 0 10px 0' }}>{children}</p>,
+                    strong: ({ children }) => <strong style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>{children}</strong>,
                     code: ({ children, className }) => {
                       const isBlock = className?.includes('language-');
                       if (isBlock) {
@@ -104,76 +116,67 @@ export default function MessageBubble({ message, index, onRate }: MessageBubbleP
                             borderRadius: 'var(--radius-sm)',
                             padding: '12px 16px',
                             overflowX: 'auto',
-                            margin: '8px 0',
+                            margin: '10px 0',
                             fontSize: 13,
                           }}>
-                            <code style={{ color: 'var(--accent-secondary)' }}>{children}</code>
+                            <code style={{ color: 'var(--accent-primary)' }}>{children}</code>
                           </pre>
                         );
                       }
                       return (
                         <code style={{
-                          background: 'rgba(0,206,201,0.15)',
+                          background: 'rgba(0,206,201,0.12)',
                           padding: '2px 6px',
                           borderRadius: 4,
                           fontSize: 13,
-                          color: 'var(--accent-secondary)',
+                          color: 'var(--accent-primary)',
                         }}>
                           {children}
                         </code>
                       );
                     },
-                    ul: ({ children }) => <ul style={{ paddingLeft: 20, margin: '8px 0' }}>{children}</ul>,
-                    ol: ({ children }) => <ol style={{ paddingLeft: 20, margin: '8px 0' }}>{children}</ol>,
-                    li: ({ children }) => <li style={{ marginBottom: 4 }}>{children}</li>,
+                    ul: ({ children }) => <ul style={{ paddingLeft: 20, margin: '10px 0' }}>{children}</ul>,
+                    ol: ({ children }) => <ol style={{ paddingLeft: 20, margin: '10px 0' }}>{children}</ol>,
+                    li: ({ children }) => <li style={{ marginBottom: 6 }}>{children}</li>,
                     a: ({ href, children }) => (
                       <a href={href} target="_blank" rel="noopener noreferrer"
-                        style={{ color: 'var(--accent-secondary)', textDecoration: 'underline' }}>
+                        style={{ color: 'var(--accent-primary)', textDecoration: 'underline' }}>
                         {children}
                       </a>
                     ),
-                    blockquote: ({ children }) => (
-                      <blockquote style={{
-                        borderLeft: '3px solid var(--accent-primary)',
-                        paddingLeft: 12,
-                        margin: '8px 0',
-                        color: 'var(--text-secondary)',
-                        fontStyle: 'italic',
-                      }}>
-                        {children}
-                      </blockquote>
-                    ),
                   }}
                 >
-                  {message.content}
+                  {displayContent}
                 </ReactMarkdown>
+
+                {/* Inline Chart Injection */}
+                {chartConfig && (
+                  <DynamicChatChart config={chartConfig} report={report} />
+                )}
               </div>
             )}
           </div>
 
-          {/* Sources and Rating (assistant only) */}
           {!isUser && (
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              marginTop: 10, paddingTop: 8,
+              marginTop: 12, paddingTop: 10,
               borderTop: '1px solid var(--border-subtle)',
             }}>
-              {/* Sources */}
               <div>
                 {message.sources && message.sources.length > 0 && (
                   <span style={{
                     fontSize: 11, color: 'var(--text-muted)',
-                    display: 'flex', alignItems: 'center', gap: 4,
+                    display: 'flex', alignItems: 'center', gap: 6,
                   }}>
-                    <span style={{ fontSize: 12 }}>📚</span>
-                    {message.sources.length} source{message.sources.length !== 1 ? 's' : ''}
+                    <span style={{ fontSize: 14 }}>📘</span>
+                    Source: {message.sources[0]}
                   </span>
                 )}
               </div>
 
-              {/* Rating buttons */}
               <div style={{
-                display: 'flex', gap: 2,
+                display: 'flex', gap: 4,
                 opacity: isHovered || message.rating ? 1 : 0,
                 transition: 'var(--transition-fast)',
               }}>
@@ -181,12 +184,11 @@ export default function MessageBubble({ message, index, onRate }: MessageBubbleP
                   onClick={() => onRate('like')}
                   style={{
                     background: message.rating === 'like' ? 'rgba(0,206,201,0.15)' : 'transparent',
-                    border: `1px solid ${message.rating === 'like' ? 'rgba(0,206,201,0.3)' : 'transparent'}`,
-                    borderRadius: 6, padding: '4px 8px',
+                    border: 'none', borderRadius: 6, padding: '4px 8px',
                     cursor: 'pointer', transition: 'var(--transition-fast)',
-                    fontSize: 13,
+                    fontSize: 14,
                   }}
-                  title="Good response"
+                  title="Helpful"
                 >
                   👍
                 </button>
@@ -194,12 +196,11 @@ export default function MessageBubble({ message, index, onRate }: MessageBubbleP
                   onClick={() => onRate('dislike')}
                   style={{
                     background: message.rating === 'dislike' ? 'rgba(255,107,107,0.15)' : 'transparent',
-                    border: `1px solid ${message.rating === 'dislike' ? 'rgba(255,107,107,0.3)' : 'transparent'}`,
-                    borderRadius: 6, padding: '4px 8px',
+                    border: 'none', borderRadius: 6, padding: '4px 8px',
                     cursor: 'pointer', transition: 'var(--transition-fast)',
-                    fontSize: 13,
+                    fontSize: 14,
                   }}
-                  title="Bad response"
+                  title="Not helpful"
                 >
                   👎
                 </button>
@@ -208,10 +209,9 @@ export default function MessageBubble({ message, index, onRate }: MessageBubbleP
                   onClick={handleSpeak}
                   style={{
                     background: isSpeaking ? 'rgba(0,206,201,0.15)' : 'transparent',
-                    border: `1px solid ${isSpeaking ? 'rgba(0,206,201,0.3)' : 'transparent'}`,
-                    borderRadius: 6, padding: '4px 8px',
+                    border: 'none', borderRadius: 6, padding: '4px 8px',
                     cursor: 'pointer', transition: 'var(--transition-fast)',
-                    fontSize: 13,
+                    fontSize: 14,
                   }}
                   title={isSpeaking ? 'Stop reading' : 'Read aloud'}
                 >
