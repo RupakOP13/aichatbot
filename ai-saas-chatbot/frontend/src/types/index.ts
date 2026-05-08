@@ -52,6 +52,10 @@ export interface ReportInsight {
   chartConfig?: {
     recommendedCharts: ChartRecommendation[];
   };
+  dataHealth?: {
+    score: number;
+    issues: Array<{ column: string; type: string; severity: 'low' | 'medium' | 'high'; message: string }>;
+  };
 }
 
 export interface NumericStat {

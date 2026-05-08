@@ -132,6 +132,9 @@ ${context}`
 - recommendations (array of 3 strings): actionable recommendations
 - risks (array of up to 3 strings): data quality issues or business risks
 - chartConfig (object): recommended charts for this specific dataset
+- dataHealth (object): audit of data quality with:
+    - score (number): 0-100 score based on nulls, outliers, and consistency
+    - issues (array of objects): { column, type (e.g. "Missing Data", "Outliers"), severity (low/medium/high), message }
 
 For chartConfig.recommendedCharts, suggest 2-4 charts. Use these column names exactly: ${summary.columns.join(', ')}.
 Date columns: [${dateColumns.join(', ')}]

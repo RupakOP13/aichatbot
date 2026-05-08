@@ -43,6 +43,10 @@ export interface IReportInsights {
   chartConfig?: {
     recommendedCharts: IChartRecommendation[];
   };
+  dataHealth?: {
+    score: number;
+    issues: Array<{ column: string; type: string; severity: 'low' | 'medium' | 'high'; message: string }>;
+  };
 }
 
 export interface IReport extends MongoDocument {
@@ -124,6 +128,18 @@ const reportInsightsSchema = new Schema<IReportInsights>(
     risks: { type: [String], default: [] },
     chartConfig: {
       recommendedCharts: { type: [chartRecommendationSchema], default: [] },
+    },
+    dataHealth: {
+      score: { type: Number },
+      issues: { 
+        type: [{ 
+          column: String, 
+          type: { type: String }, 
+          severity: { type: String, enum: ['low', 'medium', 'high'] }, 
+          message: String 
+        }], 
+        default: [] 
+      },
     },
   },
   { _id: false }
