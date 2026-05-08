@@ -103,8 +103,9 @@ export default function Login() {
       </div>
 
       {/* Right Panel - Login Form */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
-        <div className="w-full max-w-md animate-fade-in">
+      <div className="flex-1 h-screen overflow-y-auto custom-scrollbar">
+        <div className="min-h-full flex items-center justify-center p-6 lg:p-12">
+          <div className="w-full max-w-md animate-fade-in py-12">
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
             <div style={{
@@ -318,6 +319,7 @@ export default function Login() {
             </p>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

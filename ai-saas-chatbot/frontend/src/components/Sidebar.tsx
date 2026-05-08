@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
+import { FiPlus, FiMessageSquare, FiTrash2, FiDatabase, FiHome, FiTrendingUp, FiSettings, FiActivity, FiLogOut } from 'react-icons/fi';
+import { useAuth } from '../hooks/useAuth';
 import { Chat, Report } from '../types';
 
 interface SidebarProps {
@@ -33,12 +35,14 @@ export default function Sidebar({
 }: SidebarProps) {
   const [hoveredChat, setHoveredChat] = useState<string | null>(null);
   const [hoveredReport, setHoveredReport] = useState<string | null>(null);
+  const location = useLocation();
+  const { user, logout } = useAuth();
 
   const navItems = [
-    { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
-    { to: '/reports', label: 'Reports', icon: '📊' },
-    { to: '/insights', label: 'Insights', icon: '✨' },
-    { to: '/settings', label: 'Settings', icon: '⚙️' }
+    { to: '/dashboard', label: 'Dashboard', icon: <FiActivity /> },
+    { to: '/reports', label: 'Reports', icon: <FiDatabase /> },
+    { to: '/insights', label: 'Insights', icon: <FiTrendingUp /> },
+    { to: '/settings', label: 'Settings', icon: <FiSettings /> }
   ];
 
   const statusColor = (status: string) => {
@@ -104,36 +108,39 @@ export default function Sidebar({
               (e.target as HTMLElement).style.transform = 'translateY(0)';
             }}
           >
-            <span style={{ fontSize: 16 }}>✨</span>
+            <FiPlus size={16} />
             New Chat
           </button>
         </div>
 
-        <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-subtle)' }}>
-          {navItems.map(item => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              style={({ isActive }) => ({
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '8px 10px',
-                borderRadius: 'var(--radius-sm)',
-                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                background: isActive ? 'rgba(0, 206, 201, 0.15)' : 'transparent',
-                borderLeft: isActive ? '3px solid var(--accent-primary)' : '3px solid transparent',
-                fontSize: 13,
-                fontWeight: isActive ? 600 : 500,
-                textDecoration: 'none',
-                transition: 'var(--transition-fast)'
-              })}
-            >
-              <span style={{ fontSize: 14 }}>{item.icon}</span>
-              {item.label}
-            </NavLink>
-          ))}
-        </div>
+        <nav style={{ padding: '0 12px', borderBottom: '1px solid var(--border-subtle)' }}>
+          {navItems.map(item => {
+            const isActive = location.pathname === item.to;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '10px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  marginBottom: 4,
+                  color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  background: isActive ? 'rgba(0, 206, 201, 0.15)' : 'transparent',
+                  fontSize: 13,
+                  fontWeight: isActive ? 600 : 500,
+                  textDecoration: 'none',
+                  transition: 'var(--transition-fast)'
+                }}
+              >
+                <span style={{ fontSize: 16, display: 'flex' }}>{item.icon}</span>
+                {item.label}
+              </NavLink>
+            );
+          })}
+        </nav>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 8px' }}>
           <div style={{ padding: '0 8px', marginBottom: 8 }}>
@@ -175,7 +182,6 @@ export default function Sidebar({
                         background: isActive
                           ? 'rgba(0, 206, 201, 0.15)'
                           : isHovered ? 'rgba(255,255,255,0.03)' : 'transparent',
-                        borderLeft: isActive ? '3px solid var(--accent-primary)' : '3px solid transparent',
                       }}
                     >
                       <button
@@ -190,9 +196,10 @@ export default function Sidebar({
                           fontSize: 13, fontWeight: isActive ? 600 : 400,
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                           fontFamily: 'inherit',
+                          display: 'flex', alignItems: 'center', gap: 8
                         }}
                       >
-                        <span style={{ marginRight: 8, fontSize: 12, opacity: 0.5 }}>💬</span>
+                        <FiMessageSquare size={14} style={{ opacity: 0.7 }} />
                         {chat.title}
                       </button>
 
@@ -204,7 +211,7 @@ export default function Sidebar({
                           }}
                           style={{
                             background: 'none', border: 'none', cursor: 'pointer',
-                            color: 'var(--text-muted)', fontSize: 14, padding: '4px 8px',
+                            color: 'var(--text-muted)', padding: '4px 8px',
                             transition: 'var(--transition-fast)', borderRadius: 4,
                             marginRight: 4, flexShrink: 0,
                           }}
@@ -212,7 +219,7 @@ export default function Sidebar({
                           onMouseLeave={(e) => (e.target as HTMLElement).style.color = 'var(--text-muted)'}
                           title="Delete chat"
                         >
-                          🗑️
+                          <FiTrash2 size={14} />
                         </button>
                       )}
                     </div>
@@ -279,7 +286,7 @@ export default function Sidebar({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
-                    <span style={{ fontSize: 14, flexShrink: 0 }}>📊</span>
+                    <FiDatabase size={14} style={{ flexShrink: 0, opacity: 0.7 }} />
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <button
                         onClick={() => {
@@ -321,7 +328,7 @@ export default function Sidebar({
                       }}
                       style={{
                         background: 'none', border: 'none', cursor: 'pointer',
-                        color: 'var(--text-muted)', fontSize: 13, padding: '4px 6px',
+                        color: 'var(--text-muted)', padding: '4px 6px',
                         transition: 'var(--transition-fast)', borderRadius: 4,
                         flexShrink: 0,
                       }}
@@ -329,13 +336,66 @@ export default function Sidebar({
                       onMouseLeave={(e) => (e.target as HTMLElement).style.color = 'var(--text-muted)'}
                       title="Delete report"
                     >
-                      🗑️
+                      <FiTrash2 size={14} />
                     </button>
                   )}
                 </li>
               ))}
             </ul>
           )}
+        </div>
+
+        {/* Sidebar Footer - User Profile */}
+        <div style={{
+          padding: '16px',
+          borderTop: '1px solid var(--border-subtle)',
+          background: 'rgba(255,255,255,0.02)',
+          marginTop: 'auto'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: '10px',
+              background: 'var(--accent-primary)', color: 'white',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 800, fontSize: 14, flexShrink: 0,
+              boxShadow: '0 0 15px rgba(0,206,201,0.2)'
+            }}>
+              {user?.username?.[0]?.toUpperCase()}
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <p style={{ 
+                fontSize: 13, fontWeight: 700, color: 'var(--text-primary)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                margin: 0, lineHeight: 1.2
+              }}>
+                {user?.username}
+              </p>
+              <p style={{ 
+                fontSize: 10, color: 'var(--accent-primary)', 
+                fontWeight: 800, textTransform: 'uppercase', 
+                letterSpacing: '0.05em', margin: 0, marginTop: 2
+              }}>
+                {user?.plan} Member
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                if (window.confirm('Are you sure you want to sign out?')) {
+                  logout();
+                }
+              }}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'var(--text-muted)', padding: 8, borderRadius: 8,
+                transition: 'var(--transition-fast)'
+              }}
+              onMouseEnter={(e) => (e.target as HTMLElement).style.color = 'var(--error)'}
+              onMouseLeave={(e) => (e.target as HTMLElement).style.color = 'var(--text-muted)'}
+              title="Sign Out"
+            >
+              <FiLogOut size={16} />
+            </button>
+          </div>
         </div>
       </aside>
     </>

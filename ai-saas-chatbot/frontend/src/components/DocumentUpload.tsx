@@ -33,7 +33,7 @@ export default function DocumentUpload({ onClose, onUploadSuccess }: DocumentUpl
       return;
     }
 
-    const allowed = ['csv', 'xlsx'];
+    const allowed = ['csv', 'xlsx', 'json', 'pdf', 'docx'];
     const ext = file.name.split('.').pop()?.toLowerCase();
     if (!ext || !allowed.includes(ext)) {
       toast.error(`Unsupported file type. Allowed: ${allowed.join(', ')}`);
@@ -124,7 +124,7 @@ export default function DocumentUpload({ onClose, onUploadSuccess }: DocumentUpl
           )}
         </div>
         <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 24, lineHeight: 1.5 }}>
-          Upload CSV or Excel files to get instant business insights and summaries.
+          Upload CSV, Excel, PDF, Word, or JSON files to get instant business insights and summaries.
         </p>
 
         {/* Drop Zone */}
@@ -210,7 +210,7 @@ export default function DocumentUpload({ onClose, onUploadSuccess }: DocumentUpl
               <div style={{
                 display: 'flex', gap: 6, justifyContent: 'center', marginTop: 16, flexWrap: 'wrap',
               }}>
-                {['CSV', 'XLSX'].map(type => (
+                {['CSV', 'XLSX', 'JSON', 'PDF', 'DOCX'].map(type => (
                   <span key={type} style={{
                     padding: '3px 10px', borderRadius: 'var(--radius-full)',
                     background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)',
@@ -233,7 +233,7 @@ export default function DocumentUpload({ onClose, onUploadSuccess }: DocumentUpl
           type="file"
           onChange={handleFileChange}
           disabled={loading}
-          accept=".csv,.xlsx"
+          accept=".csv,.xlsx,.json,.pdf,.docx"
           style={{ display: 'none' }}
         />
 

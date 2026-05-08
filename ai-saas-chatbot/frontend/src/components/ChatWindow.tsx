@@ -8,9 +8,10 @@ interface ChatWindowProps {
   chat: Chat;
   report: Report | null;
   onChatUpdate: (chat: Chat) => void;
+  autoMessage?: string;
 }
 
-export default function ChatWindow({ chat, report, onChatUpdate }: ChatWindowProps) {
+export default function ChatWindow({ chat, report, onChatUpdate, autoMessage }: ChatWindowProps) {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -54,6 +55,12 @@ export default function ChatWindow({ chat, report, onChatUpdate }: ChatWindowPro
     }
   }, []);
 
+  useEffect(() => {
+    if (autoMessage && !loading) {
+      handleSendMessage(undefined, autoMessage);
+    }
+  }, [autoMessage, chat._id]);
+
   const toggleListening = () => {
     if (isListening) {
       recognitionRef.current?.stop();
@@ -83,17 +90,17 @@ export default function ChatWindow({ chat, report, onChatUpdate }: ChatWindowPro
     inputRef.current?.focus();
   }, [chat._id]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = message.trim();
+  const handleSendMessage = async (e?: React.FormEvent, directMessage?: string) => {
+    if (e) e.preventDefault();
+    const trimmed = (directMessage || message).trim();
     if (!trimmed || loading) return;
 
     if (isListening) {
       recognitionRef.current?.stop();
     }
 
+    if (!directMessage) setMessage('');
     setLoading(true);
-    setMessage('');
 
     try {
       const { chat: updatedChat } = await api.sendMessage(chat._id, trimmed);

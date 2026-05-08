@@ -3,7 +3,7 @@ import multer from 'multer';
 import ReportModel from '../models/Report';
 import User from '../models/User';
 import LLMService from '../services/llm';
-import { parseCsv, parseXlsx } from '../utils/reportParser';
+import { parseCsv, parseXlsx, parseJson, parsePdf, parseDocx } from '../utils/reportParser';
 import { buildReportProfile } from '../utils/reportStats';
 import { extractFileName, formatFileSize } from '../utils/text';
 import { uploadReportBuffer, deleteReportFile } from '../services/cloudinary';
@@ -17,13 +17,13 @@ const upload = multer({
     fileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760')
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['csv', 'xlsx'];
+    const allowedTypes = ['csv', 'xlsx', 'json', 'pdf', 'docx'];
     const ext = file.originalname.split('.').pop()?.toLowerCase();
 
     if (ext && allowedTypes.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Allowed: csv, xlsx'));
+      cb(new Error('Invalid file type. Allowed: csv, xlsx, json, pdf, docx'));
     }
   }
 });
@@ -81,6 +81,12 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
         parsed = parseCsv(file.buffer);
       } else if (ext === 'xlsx') {
         parsed = parseXlsx(file.buffer);
+      } else if (ext === 'json') {
+        parsed = parseJson(file.buffer);
+      } else if (ext === 'pdf') {
+        parsed = await parsePdf(file.buffer);
+      } else if (ext === 'docx') {
+        parsed = await parseDocx(file.buffer);
       } else {
         return res.status(422).json({ success: false, message: 'Unsupported file type' });
       }

@@ -8,6 +8,7 @@ import Sidebar from '../components/Sidebar';
 import ChatWindow from '../components/ChatWindow';
 import DocumentUpload from '../components/DocumentUpload';
 import ReportContextPanel from '../components/ReportContextPanel';
+import { FiLogOut, FiUser, FiMenu, FiGrid, FiZap, FiDatabase, FiPieChart, FiActivity } from 'react-icons/fi';
 
 type DashboardView = 'dashboard' | 'reports' | 'insights' | 'settings';
 
@@ -26,6 +27,7 @@ export default function Dashboard({ view = 'dashboard' }: DashboardProps) {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<string | undefined>(undefined);
 
   const reportIdParam = searchParams.get('reportId');
 
@@ -56,7 +58,7 @@ export default function Dashboard({ view = 'dashboard' }: DashboardProps) {
   }, []);
 
   useEffect(() => {
-    if (!user?.id) return; // FIX: Use user.id instead of user object to prevent infinite loops!
+    if (!user?.id) return;
 
     const init = async () => {
       setLoading(true);
@@ -114,7 +116,6 @@ export default function Dashboard({ view = 'dashboard' }: DashboardProps) {
     init();
   }, [user?.id, reportIdParam, loadChats, loadReports, refreshUser]);
 
-  // Poll for report status updates
   useEffect(() => {
     const processingReports = reports.filter(r => r.status === 'processing');
     if (processingReports.length === 0) return;
@@ -256,95 +257,89 @@ export default function Dashboard({ view = 'dashboard' }: DashboardProps) {
     navigate(`/dashboard?reportId=${reportId}`);
   };
 
+  const handleFixData = async (message: string) => {
+    if (!activeChat) {
+      const newChat = await api.createChat(activeReport!._id);
+      setChats(prev => [newChat, ...prev]);
+      setActiveChat(newChat);
+    }
+    setPendingMessage(message);
+    // Clear pending message after a tick to allow re-triggering
+    setTimeout(() => setPendingMessage(undefined), 100);
+    toast.success('AI cleaning assistant activated');
+  };
+
   const renderReportsView = () => (
-    <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>My Reports</h2>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-            Manage uploaded reports and open them for analysis.
-          </p>
+    <div className="animate-fade-in p-6 md:p-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 pb-8 border-b border-white/5">
+        <div className="flex-1 text-left">
+          <h2 className="text-3xl font-black tracking-tight text-white mb-2">Data Repository</h2>
+          <p className="text-gray-400 text-sm font-medium leading-relaxed">Manage and analyze your business intelligence documents.</p>
         </div>
         <button
           onClick={() => setShowUploadModal(true)}
-          style={{
-            padding: '10px 16px', borderRadius: 'var(--radius-md)',
-            background: 'var(--accent-gradient)', border: 'none',
-            color: 'white', fontSize: 13, fontWeight: 600,
-            cursor: 'pointer', transition: 'var(--transition-base)',
-            boxShadow: '0 4px 20px rgba(0,206,201,0.3)'
-          }}
+          className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#00cec9] to-[#0984e3] text-white font-bold text-sm shadow-lg shadow-[#00cec9]/10 hover:shadow-[#00cec9]/20 transition-all transform hover:-translate-y-1 active:scale-95 whitespace-nowrap self-start md:self-center"
         >
-          Upload Report
+          Upload New Report
         </button>
       </div>
 
       {reports.length === 0 ? (
-        <div className="glass" style={{
-          padding: 32, borderRadius: 'var(--radius-lg)', textAlign: 'center'
-        }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
-          <p style={{ color: 'var(--text-muted)' }}>No reports yet. Upload your first CSV/XLSX report.</p>
+        <div className="glass p-20 rounded-3xl text-center border-dashed border-2 border-white/5">
+          <div className="text-6xl mb-6">📂</div>
+          <h3 className="text-xl font-bold mb-3">No reports yet</h3>
+          <p className="text-gray-500 max-w-sm mx-auto mb-8">Your data vault is empty. Upload a CSV or XLSX file to begin your journey into AI-powered insights.</p>
+          <button 
+            onClick={() => setShowUploadModal(true)}
+            className="px-8 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-sm font-bold"
+          >
+            Upload First Report
+          </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {reports.map(report => (
-            <div key={report._id} className="glass" style={{
-              padding: 18, borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {report.title}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                    {report.filename}
-                  </div>
+            <div key={report._id} className="glass group p-6 rounded-2xl hover:border-[#00cec9]/30 transition-all">
+              <div className="flex items-start justify-between mb-6">
+                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-2xl group-hover:bg-[#00cec9]/10 transition-colors">
+                  {report.mimeType?.includes('sheet') ? '📊' : '📄'}
                 </div>
-                <span style={{
-                  padding: '4px 10px', borderRadius: 999, fontSize: 10, fontWeight: 700,
-                  color: report.status === 'completed' ? 'var(--success)' : report.status === 'failed' ? 'var(--error)' : 'var(--warning)',
-                  background: 'rgba(255,255,255,0.06)', textTransform: 'capitalize'
-                }}>
+                <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                  report.status === 'completed' ? 'bg-[#2ed573]/10 text-[#2ed573]' : 
+                  report.status === 'failed' ? 'bg-[#ff6b6b]/10 text-[#ff6b6b]' : 
+                  'bg-[#ffa502]/10 text-[#ffa502] animate-pulse'
+                }`}>
                   {report.status}
-                </span>
+                </div>
+              </div>
+              <h3 className="text-lg font-bold mb-1 truncate text-white">{report.title}</h3>
+              <p className="text-gray-500 text-xs mb-6 truncate">{report.filename}</p>
+              
+              <div className="flex gap-4 text-[11px] font-medium text-gray-400 mb-8 pb-6 border-b border-white/5">
+                <div className="flex items-center gap-1.5"><span className="text-white">{report.rowCount}</span> rows</div>
+                <div className="flex items-center gap-1.5"><span className="text-white">{report.columnCount}</span> fields</div>
+                <div className="flex items-center gap-1.5"><span className="text-white">{(report.fileSize / 1024).toFixed(1)}</span> KB</div>
               </div>
 
-              <div style={{ display: 'flex', gap: 12, marginTop: 14, fontSize: 12, color: 'var(--text-secondary)' }}>
-                <span>Rows: {report.rowCount}</span>
-                <span>Cols: {report.columnCount}</span>
-              </div>
-
-              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              <div className="flex gap-2">
                 <button
                   onClick={() => openReportInChat(report._id)}
-                  style={{
-                    flex: 1, padding: '8px 10px', borderRadius: 'var(--radius-sm)',
-                    border: 'none', background: 'var(--accent-gradient)', color: 'white',
-                    fontSize: 12, fontWeight: 600, cursor: 'pointer'
-                  }}
+                  className="flex-1 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-white text-xs font-bold transition-all"
                 >
-                  Open Chat
+                  Analysis
                 </button>
                 <button
                   onClick={() => handleSelectReport(report)}
-                  style={{
-                    padding: '8px 10px', borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-light)', background: 'transparent',
-                    color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, cursor: 'pointer'
-                  }}
+                  className="flex-1 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-white text-xs font-bold transition-all"
                 >
                   Preview
                 </button>
                 <button
                   onClick={() => handleDeleteReport(report._id)}
-                  style={{
-                    padding: '8px 10px', borderRadius: 'var(--radius-sm)',
-                    border: '1px solid rgba(255,107,107,0.3)', background: 'rgba(255,107,107,0.08)',
-                    color: '#ff6b6b', fontSize: 12, fontWeight: 600, cursor: 'pointer'
-                  }}
+                  className="p-2.5 rounded-lg bg-red-500/5 hover:bg-red-500/10 text-red-500 transition-all"
+                  title="Delete"
                 >
-                  Delete
+                  🗑️
                 </button>
               </div>
             </div>
@@ -355,129 +350,137 @@ export default function Dashboard({ view = 'dashboard' }: DashboardProps) {
   );
 
   const renderInsightsView = () => (
-    <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-      <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>Insights Center</h2>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-          Auto-generated insights and trends across your reports.
-        </p>
-      </div>
+    <div className="animate-fade-in p-6 md:p-10">
+       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 pb-8 border-b border-white/5">
+          <div className="flex-1 text-left">
+             <h2 className="text-3xl font-black tracking-tight text-white mb-2">Executive Insights</h2>
+             <p className="text-gray-400 text-sm font-medium leading-relaxed">Automated intelligence summaries across your entire report catalog.</p>
+          </div>
+       </div>
 
-      {reports.length === 0 ? (
-        <div className="glass" style={{ padding: 32, borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>✨</div>
-          <p style={{ color: 'var(--text-muted)' }}>Upload a report to generate insights.</p>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gap: 16 }}>
-          {reports.map(report => (
-            <div key={report._id} className="glass" style={{ padding: 18, borderRadius: 'var(--radius-lg)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{report.title}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{report.filename}</div>
-                </div>
-                <button
+       {reports.length === 0 ? (
+         <div className="glass p-20 rounded-3xl text-center">
+           <div className="text-6xl mb-6">✨</div>
+           <p className="text-gray-500">Insights will appear once you upload and process your reports.</p>
+         </div>
+       ) : (
+         <div className="space-y-6 max-w-5xl">
+           {reports.map(report => (
+             <div key={report._id} className="glass p-8 rounded-2xl">
+               <div className="flex items-center justify-between mb-6 pb-6 border-b border-white/5">
+                 <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00cec9] to-[#0984e3] flex items-center justify-center text-lg shadow-lg">✨</div>
+                    <div>
+                      <h3 className="font-bold text-white">{report.title}</h3>
+                      <p className="text-xs text-gray-500">{report.filename}</p>
+                    </div>
+                 </div>
+                 <button 
                   onClick={() => openReportInChat(report._id)}
-                  style={{
-                    padding: '6px 12px', borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-light)', background: 'transparent',
-                    color: 'var(--text-secondary)', fontSize: 12, cursor: 'pointer'
-                  }}
-                >
-                  Open Chat
-                </button>
-              </div>
+                  className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold transition-all"
+                 >
+                   Deep Dive
+                 </button>
+               </div>
 
-              {report.status !== 'completed' ? (
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 12 }}>
-                  Insights are {report.status === 'processing' ? 'generating...' : 'unavailable'}.
-                </p>
-              ) : report.insights ? (
-                <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
-                  {report.insights.summary && (
-                    <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                      {report.insights.summary}
-                    </p>
-                  )}
-                  {report.insights.keyInsights.length > 0 && (
-                    <div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>
-                        Key Insights
-                      </div>
-                      <ul style={{ paddingLeft: 18, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                        {report.insights.keyInsights.map((item, idx) => (
-                          <li key={idx}>{item}</li>
-                        ))}
-                      </ul>
+               {report.status !== 'completed' ? (
+                 <div className="flex items-center gap-3 text-gray-500 text-sm py-4 italic">
+                    <div className="animate-spin text-[#ffa502]">⚙️</div>
+                    AI is currently auditing your data...
+                 </div>
+               ) : report.insights ? (
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <div className="prose-dark">
+                       <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-[#00cec9] mb-4">Executive Summary</h4>
+                       <p className="text-sm leading-relaxed text-gray-300">{report.insights.summary}</p>
                     </div>
-                  )}
-                  {report.insights.trends.length > 0 && (
-                    <div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>
-                        Trends
-                      </div>
-                      <ul style={{ paddingLeft: 18, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                        {report.insights.trends.map((item, idx) => (
-                          <li key={idx}>{item}</li>
-                        ))}
-                      </ul>
+                    <div className="space-y-6">
+                       <div>
+                          <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-gray-500 mb-4">Top Intelligence</h4>
+                          <div className="space-y-2">
+                             {report.insights.keyInsights.slice(0, 3).map((ki, i) => (
+                               <div key={i} className="flex gap-3 items-start text-xs bg-white/[0.02] p-3 rounded-lg border border-white/5">
+                                  <span className="text-[#00cec9] font-bold">0{i+1}.</span>
+                                  <span className="text-gray-400">{ki}</span>
+                               </div>
+                             ))}
+                          </div>
+                       </div>
                     </div>
-                  )}
-                  {report.insights.recommendations.length > 0 && (
-                    <div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>
-                        Recommendations
-                      </div>
-                      <ul style={{ paddingLeft: 18, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                        {report.insights.recommendations.map((item, idx) => (
-                          <li key={idx}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 12 }}>
-                  Insights are not available yet.
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+                 </div>
+               ) : (
+                 <p className="text-gray-500 text-sm">Intelligence engine awaiting data sync.</p>
+               )}
+             </div>
+           ))}
+         </div>
+       )}
     </div>
   );
 
   const renderSettingsView = () => (
-    <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-      <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>Settings</h2>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-          Manage your profile and plan details.
-        </p>
+    <div className="animate-fade-in p-6 md:p-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 pb-8 border-b border-white/5">
+        <div className="flex-1 text-left">
+          <h2 className="text-3xl font-black tracking-tight text-white mb-2">Account Settings</h2>
+          <p className="text-gray-400 text-sm font-medium leading-relaxed">Manage your professional profile and intelligence plan.</p>
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gap: 16, maxWidth: 720 }}>
-        <div className="glass" style={{ padding: 20, borderRadius: 'var(--radius-lg)' }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>
-            Profile
+      <div className="grid gap-8 max-w-4xl">
+        <div className="glass p-8 rounded-2xl">
+          <div className="flex items-center gap-3 mb-8">
+             <div className="w-10 h-10 rounded-full bg-[#00cec9]/10 flex items-center justify-center text-xl">👤</div>
+             <h3 className="text-lg font-bold">Profile Identity</h3>
           </div>
-          <div style={{ display: 'grid', gap: 10, fontSize: 13, color: 'var(--text-secondary)' }}>
-            <div><strong style={{ color: 'var(--text-primary)' }}>Username:</strong> {user?.username}</div>
-            <div><strong style={{ color: 'var(--text-primary)' }}>Email:</strong> {user?.email}</div>
-            <div><strong style={{ color: 'var(--text-primary)' }}>Business:</strong> {user?.businessName || 'Not set'}</div>
-            <div><strong style={{ color: 'var(--text-primary)' }}>Industry:</strong> {user?.industry || 'Not set'}</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+             <div>
+                <label className="block text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2">Display Name</label>
+                <div className="text-sm font-medium text-white p-3 rounded-lg bg-white/5 border border-white/5">{user?.username}</div>
+             </div>
+             <div>
+                <label className="block text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2">Email Address</label>
+                <div className="text-sm font-medium text-white p-3 rounded-lg bg-white/5 border border-white/5">{user?.email}</div>
+             </div>
+             <div>
+                <label className="block text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2">Business Organization</label>
+                <div className="text-sm font-medium text-white p-3 rounded-lg bg-white/5 border border-white/5">{user?.businessName || 'Not configured'}</div>
+             </div>
+             <div>
+                <label className="block text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2">Target Industry</label>
+                <div className="text-sm font-medium text-white p-3 rounded-lg bg-white/5 border border-white/5">{user?.industry || 'Not configured'}</div>
+             </div>
           </div>
         </div>
 
-        <div className="glass" style={{ padding: 20, borderRadius: 'var(--radius-lg)' }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>
-            Plan & Usage
+        <div className="glass p-8 rounded-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#00cec9]/10 blur-3xl -z-10" />
+          <div className="flex items-center gap-3 mb-8">
+             <div className="w-10 h-10 rounded-full bg-[#6c5ce7]/10 flex items-center justify-center text-xl">💎</div>
+             <h3 className="text-lg font-bold">Plan & Intelligence Quotas</h3>
           </div>
-          <div style={{ display: 'grid', gap: 10, fontSize: 13, color: 'var(--text-secondary)' }}>
-            <div><strong style={{ color: 'var(--text-primary)' }}>Plan:</strong> {user?.plan}</div>
-            <div><strong style={{ color: 'var(--text-primary)' }}>Reports Used:</strong> {user?.currentDocumentCount} / {user?.documentLimit}</div>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+             <div>
+                <div className="flex items-center gap-3 mb-2">
+                   <span className="text-2xl font-black uppercase tracking-tighter text-white">{user?.plan}</span>
+                   {user?.plan === 'free' && <span className="px-2 py-0.5 rounded bg-white/10 text-[9px] font-bold">DEFAULT</span>}
+                </div>
+                <p className="text-sm text-gray-400 mb-4">You are currently using {user?.currentDocumentCount} of your {user?.documentLimit} analysis credits.</p>
+                <div className="w-full md:w-64 h-2 bg-white/5 rounded-full overflow-hidden">
+                   <div 
+                    className="h-full bg-gradient-to-r from-[#00cec9] to-[#0984e3]" 
+                    style={{ width: `${Math.min(100, (user?.currentDocumentCount || 0) / (user?.documentLimit || 1) * 100)}%` }}
+                   />
+                </div>
+             </div>
+             {user?.plan === 'free' && (
+               <button 
+                onClick={handleUpgrade}
+                className="px-8 py-4 rounded-xl bg-white text-black font-bold text-sm hover:bg-[#00cec9] hover:text-white transition-all transform hover:scale-105"
+               >
+                 Go Unlimited with Pro
+               </button>
+             )}
           </div>
         </div>
       </div>
@@ -485,18 +488,16 @@ export default function Dashboard({ view = 'dashboard' }: DashboardProps) {
   );
 
   const renderDashboardView = () => (
-    <div className="flex-1 flex flex-col lg:flex-row min-w-0" style={{ minHeight: 0 }}>
-      <div
-        className="lg:w-[45%] border-r border-[rgba(255,255,255,0.06)]"
-        style={{ minWidth: 0, minHeight: 0 }}
-      >
-        <ReportContextPanel report={activeReport} />
+    <div className="flex-1 flex flex-col lg:flex-row min-w-0 h-full overflow-hidden">
+      <div className="lg:w-[45%] h-full border-r border-white/5">
+        <ReportContextPanel report={activeReport} onFixData={handleFixData} />
       </div>
-      <div className="flex-1 min-w-0 flex flex-col" style={{ minHeight: 0 }}>
+      <div className="flex-1 h-full min-w-0 flex flex-col">
         {activeChat ? (
           <ChatWindow
             chat={activeChat}
             report={activeReport}
+            autoMessage={pendingMessage}
             onChatUpdate={(updatedChat) => {
               setActiveChat(updatedChat);
               setChats(prev => prev.map(c => c._id === updatedChat._id
@@ -506,47 +507,27 @@ export default function Dashboard({ view = 'dashboard' }: DashboardProps) {
             }}
           />
         ) : (
-          <div style={{
-            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            height: '100%'
-          }}>
-            <div className="animate-fade-in" style={{ textAlign: 'center', maxWidth: 420 }}>
-              <div className="animate-float" style={{ fontSize: 56, marginBottom: 20 }}>💬</div>
-              <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
-                Start a Conversation
-              </h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
+          <div className="flex-1 flex items-center justify-center p-10">
+            <div className="max-w-md text-center animate-fade-in">
+              <div className="w-24 h-24 rounded-full bg-[#00cec9]/5 flex items-center justify-center text-5xl mx-auto mb-8 animate-float">💬</div>
+              <h2 className="text-2xl font-bold mb-4 text-white">Conversational Analysis</h2>
+              <p className="text-gray-500 mb-10 leading-relaxed">
                 {activeReport
-                  ? 'Ask questions about the selected report or start a new chat session.'
-                  : 'Select or upload a report to start exploring insights.'}
+                  ? `Your report "${activeReport.title}" is ready. Ask specific questions about trends, outliers, or future projections.`
+                  : 'Welcome to your AI intelligence hub. Select an existing report or upload a new one to begin your deep-dive analysis.'}
               </p>
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
-                  id="empty-new-chat"
                   onClick={handleNewChat}
-                  style={{
-                    padding: '12px 24px', borderRadius: 'var(--radius-md)',
-                    background: 'var(--accent-gradient)', border: 'none',
-                    color: 'white', fontSize: 14, fontWeight: 600,
-                    cursor: 'pointer', transition: 'var(--transition-base)',
-                    boxShadow: '0 4px 20px rgba(0,206,201,0.3)',
-                    fontFamily: 'inherit',
-                  }}
+                  className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#00cec9] to-[#0984e3] text-white font-bold text-sm shadow-xl hover:shadow-[#00cec9]/20 transition-all transform hover:-translate-y-1"
                 >
-                  New Chat
+                  Start New Chat
                 </button>
                 <button
-                  id="empty-upload"
                   onClick={() => setShowUploadModal(true)}
-                  style={{
-                    padding: '12px 24px', borderRadius: 'var(--radius-md)',
-                    background: 'transparent', border: '1px solid var(--border-light)',
-                    color: 'var(--text-secondary)', fontSize: 14, fontWeight: 600,
-                    cursor: 'pointer', transition: 'var(--transition-base)',
-                    fontFamily: 'inherit',
-                  }}
+                  className="px-8 py-3 rounded-xl border border-white/10 hover:bg-white/5 text-white font-bold text-sm transition-all"
                 >
-                  Upload Report
+                  Quick Upload
                 </button>
               </div>
             </div>
@@ -557,7 +538,7 @@ export default function Dashboard({ view = 'dashboard' }: DashboardProps) {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
+    <div className="flex h-screen w-screen overflow-hidden bg-[#0a0a1a] font-sans selection:bg-[#00cec9]/30 selection:text-white">
       <Sidebar
         chats={chats}
         reports={reports}
@@ -574,143 +555,75 @@ export default function Dashboard({ view = 'dashboard' }: DashboardProps) {
       />
 
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="glass" style={{
-          padding: '12px 24px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          borderBottom: '1px solid var(--border-subtle)',
-          zIndex: 20,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        {/* Modern Navbar */}
+        <header className="h-20 flex-shrink-0 flex items-center justify-between px-8 border-b border-white/5 bg-black/10 backdrop-blur-md z-30">
+          <div className="flex items-center gap-6">
             <button
-              id="sidebar-toggle"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="md:hidden"
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: 'var(--text-secondary)', fontSize: 20, padding: 4,
-              }}
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-xl text-gray-400 hover:text-white transition-colors"
             >
-              ☰
+              <FiMenu />
             </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: 8,
-                background: 'var(--accent-gradient)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 16,
-              }}>
-                ⚡
+            <div className="hidden sm:flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00cec9] to-[#0984e3] flex items-center justify-center text-white font-black text-sm shadow-lg">
+                 <FiActivity />
               </div>
-              <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
-                NexusAI
+              <span className="font-bold tracking-tight text-white flex items-center gap-2">
+                NexusAI <span className="px-1.5 py-0.5 rounded-full bg-white/5 border border-white/5 text-[9px] text-gray-400 font-bold tracking-normal">v1.2</span>
               </span>
-              {user?.plan === 'pro' && (
-                <span style={{
-                  fontSize: 10, fontWeight: 800, padding: '2px 6px',
-                  borderRadius: 4, background: 'var(--accent-gradient)',
-                  color: 'white', letterSpacing: '0.05em'
-                }}>
-                  PRO
-                </span>
-              )}
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-            {/* Usage Stats */}
-            <div className="hidden lg:flex" style={{ alignItems: 'center', gap: 12 }}>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
-                  Usage
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>
-                  {user?.currentDocumentCount} / {user?.documentLimit} Reports
-                </div>
-              </div>
-              <div style={{
-                width: 60, height: 6, background: 'var(--bg-tertiary)',
-                borderRadius: 3, overflow: 'hidden'
-              }}>
-                <div style={{
-                  width: `${Math.min(100, (user?.currentDocumentCount || 0) / (user?.documentLimit || 1) * 100)}%`,
-                  height: '100%', background: 'var(--accent-primary)',
-                  borderRadius: 3, transition: 'width 0.5s ease-out'
-                }} />
-              </div>
+          <div className="flex items-center gap-6">
+            {/* Global Search Placeholder or Plan Status */}
+            <div className="hidden lg-flex items-center gap-4 bg-white/[0.03] border border-white/5 rounded-full px-4 py-1.5">
+               <div className="w-2 h-2 rounded-full bg-[#2ed573] shadow-[0_0_8px_#2ed573]" />
+               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Real-time Sync Active</span>
             </div>
 
-            {user?.plan === 'free' && (
-              <button
-                onClick={handleUpgrade}
-                style={{
-                  padding: '6px 14px', borderRadius: 'var(--radius-sm)',
-                  background: 'var(--accent-gradient)', border: 'none',
-                  color: 'white', fontSize: 12, fontWeight: 700,
-                  cursor: 'pointer', transition: 'var(--transition-base)',
-                  boxShadow: '0 4px 12px rgba(0,206,201,0.2)',
-                }}
-              >
-                Upgrade to Pro
-              </button>
-            )}
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: 'var(--radius-full)',
-                  background: 'var(--bg-tertiary)', border: '1px solid var(--border-light)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 14, fontWeight: 600, color: 'var(--accent-secondary)',
-                }}>
-                  {user?.username?.charAt(0).toUpperCase()}
-                </div>
-                <span className="hidden sm:inline" style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>
-                  {user?.username}
-                </span>
+            <div className="flex items-center gap-4 pl-6 border-l border-white/10 h-10">
+              <div className="flex flex-col items-end hidden sm:flex justify-center h-full">
+                 <span className="text-[13px] font-bold text-white leading-none mb-1">{user?.username}</span>
+                 <span className="text-[9px] text-[var(--accent-primary)] font-black uppercase tracking-[0.15em] leading-none">{user?.plan} Membership</span>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[var(--accent-primary)] font-bold shadow-inner">
+                 <FiUser />
               </div>
               <button
-                id="logout-btn"
                 onClick={handleLogout}
-                style={{
-                  padding: '6px 14px', borderRadius: 'var(--radius-sm)',
-                  background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.2)',
-                  color: '#ff6b6b', fontSize: 12, fontWeight: 600,
-                  cursor: 'pointer', transition: 'var(--transition-fast)',
-                  fontFamily: 'inherit',
-                }}
+                className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-red-400 transition-all ml-1 group"
+                title="Sign Out"
               >
-                Sign Out
+                <FiLogOut className="group-hover:scale-110 transition-transform" />
               </button>
             </div>
           </div>
         </header>
 
-        {/* Main Content */}
-        {loading ? (
-          <div style={{
-            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexDirection: 'column', gap: 16,
-          }}>
-            <div style={{
-              width: 48, height: 48, border: '3px solid rgba(0,206,201,0.2)',
-              borderTopColor: 'var(--accent-primary)', borderRadius: '50%',
-              animation: 'spin 0.8s linear infinite',
-            }} />
-            <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading your workspace...</p>
-          </div>
-        ) : view === 'reports' ? (
-          renderReportsView()
-        ) : view === 'insights' ? (
-          renderInsightsView()
-        ) : view === 'settings' ? (
-          renderSettingsView()
-        ) : (
-          renderDashboardView()
-        )}
+        {/* Dynamic View Content */}
+        <main className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+          {loading ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-[#0a0a1a] z-50">
+              <div className="w-16 h-16 relative">
+                 <div className="absolute inset-0 border-4 border-[#00cec9]/10 rounded-full" />
+                 <div className="absolute inset-0 border-4 border-t-[#00cec9] rounded-full animate-spin" />
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                 <p className="text-sm font-bold tracking-widest uppercase text-white">Calibrating Workspace</p>
+                 <p className="text-[10px] text-gray-500 font-medium">Synchronizing with intelligence cloud...</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {view === 'reports' ? renderReportsView() :
+               view === 'insights' ? renderInsightsView() :
+               view === 'settings' ? renderSettingsView() :
+               renderDashboardView()}
+            </>
+          )}
+        </main>
       </div>
 
-      {/* Upload Modal */}
       {showUploadModal && (
         <DocumentUpload
           onClose={() => setShowUploadModal(false)}

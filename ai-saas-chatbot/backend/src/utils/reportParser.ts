@@ -1,5 +1,7 @@
 import * as xlsx from 'xlsx';
 import Papa from 'papaparse';
+import pdf from 'pdf-parse';
+import mammoth from 'mammoth';
 
 export interface ParsedReport {
   columns: string[];
@@ -171,4 +173,57 @@ export const parseXlsx = (buffer: Buffer): ParsedReport => {
   const rows = normalizeRows(rawRows, columns);
 
   return { columns, rows };
+};
+
+export const parseJson = (buffer: Buffer): ParsedReport => {
+  const text = buffer.toString('utf-8');
+  const data = JSON.parse(text);
+  
+  let rawRows: Record<string, any>[] = [];
+  if (Array.isArray(data)) {
+    rawRows = data.filter(item => typeof item === 'object' && item !== null);
+  } else if (typeof data === 'object' && data !== null) {
+    // If it's a single object, wrap it in an array
+    rawRows = [data];
+  } else {
+    throw new Error('JSON content must be an object or an array of objects');
+  }
+
+  if (rawRows.length === 0) {
+    throw new Error('JSON document is empty');
+  }
+
+  const columns = collectColumns(rawRows);
+  const rows = normalizeRows(rawRows, columns);
+
+  return { columns, rows };
+};
+
+export const parsePdf = async (buffer: Buffer): Promise<ParsedReport> => {
+  const data = await pdf(buffer);
+  const content = data.text.trim();
+  
+  if (!content) {
+    throw new Error('No text content found in PDF');
+  }
+
+  // Treat as a single-column table for analysis compatibility
+  return {
+    columns: ['Content'],
+    rows: [{ Content: content }]
+  };
+};
+
+export const parseDocx = async (buffer: Buffer): Promise<ParsedReport> => {
+  const result = await mammoth.extractRawText({ buffer });
+  const content = result.value.trim();
+
+  if (!content) {
+    throw new Error('No text content found in Word document');
+  }
+
+  return {
+    columns: ['Content'],
+    rows: [{ Content: content }]
+  };
 };
